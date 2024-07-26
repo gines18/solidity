@@ -5,10 +5,12 @@ contract Twitter {
     uint16 public MAX_TWEET_LENGTH = 180;
 
     struct Tweet {
+        uint id;
         address author;
         string content;
         uint256 timestamp;
         uint256 likes; // Corrected from 'likees' to 'likes'
+
     }
 
     mapping(address => Tweet[]) public tweets;
@@ -32,6 +34,7 @@ contract Twitter {
         require(bytes(_tweet).length <= MAX_TWEET_LENGTH , "Tweet is tooo long bro!");
 
         Tweet memory newTweet = Tweet({
+            id: tweets[msg.sender].length,
             author: msg.sender,
             content: _tweet,
             timestamp: block.timestamp,
@@ -39,6 +42,17 @@ contract Twitter {
         });
 
         tweets[msg.sender].push(newTweet);
+    }
+
+    function likeTweet(address author, uint256 id ) external {
+        require(tweets[author][id].id == id, "Tweet does not exist");
+        tweets[author][id].likes++;
+    }
+
+    function unlikeTweet(address author, uint256 id ) external {
+        require(tweets[author][id].id == id, "Tweet does not exist");
+        require(tweets[author][id].likes > 0, "Tweet has not likes");
+        tweets[author][id].likes--;
     }
 
     function getTweet(uint _i) public view returns (Tweet memory) {
