@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
 
-contract Twitter {
+pragma solidity ^0.8.20;
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract Twitter is Ownable {
     uint16 public MAX_TWEET_LENGTH = 180;
 
     struct Tweet {
@@ -14,28 +16,28 @@ contract Twitter {
     }
 
     mapping(address => Tweet[]) public tweets;
-    address public owner;
 
     event TweetCreated(uint256 id, address author, string content, uint256 timestamp);
     event TweetLiked(address liker, address tweetAuthor, uint tweetId, uint256 newLikeCount);
     event TweetUnliked( address unliker, address tweetAuthor, uint256 tweetId, uint256 newLikeCoint);
-
-    constructor() {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-            require(msg.sender == owner, "You are not an owner");
-            _;
-    }
+    constructor() Ownable(msg.sender) {}
 
     function changeTweetLength(uint16 newTweetLength) public onlyOwner{
         MAX_TWEET_LENGTH = newTweetLength;
     }
 
+    function getTotalLikes( address _author) external view returns(uint){
+        uint totalLikes;
+              for(uint i = 0; i < tweets[_author].length; i++ ){
+              totalLikes += tweets[_author][i].likes;
+        }
+              return totalLikes;
+      
+    }
+
     function createTweet(string memory _tweet) public {
 
-        require(bytes(_tweet).length <= MAX_TWEET_LENGTH , "Tweet is tooo long bro!");
+        require(bytes(_tweet).length <= MAX_TWEET_LENGTH , "Tweet is too long bro!");
 
         Tweet memory newTweet = Tweet({
             id: tweets[msg.sender].length,
@@ -58,7 +60,7 @@ contract Twitter {
 
     function unlikeTweet(address author, uint256 id ) external {
         require(tweets[author][id].id == id, "Tweet does not exist");
-        require(tweets[author][id].likes > 0, "Tweet has not likes");
+        require(tweets[author][id].likes > 0, "Tweet has no likes");
         tweets[author][id].likes--;
 
          emit TweetUnliked(msg.sender, author, id, tweets[author][id].likes);
